@@ -6,9 +6,11 @@ export default function MainPage() {
   const navigate = useNavigate();
 
   // 경로 이동
-  const handleSubmit = () => {
-    navigate('/result');
-    // e.preventDefault();
+  const handleSubmit = (event) => {
+    
+    event.preventDefault();
+    navigate("/result", { replace: true });
+    
     // alert(`URL Submitted: ${url}`);
   };
 
