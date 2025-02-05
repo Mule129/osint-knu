@@ -16,8 +16,10 @@ export default function MainPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-gradient-to-r from-purple-100 via-pink-50 to-blue-100 gap-4">
+      <img src="/vite.svg" alt="Vite Logo" className="w-32 h-32" />
+
       <div className="text-6xl font-bold mt-0 mb-4 text-gray-800 drop-shadow-lg">KNU OSINT</div>
-      <div className="mt-0 mb-4 text-gray-700">KNU OSINT는 입력한 URL을 스캔하여 이 사이트 내에서 얻어낼 수 있는 공개정보를 조회하는 서비스 입니다</div>
+      <div className="mt-0 mb-4 text-gray-700 w-full max-w-3/8">KNU OSINT는 입력한 URL을 스캔하여 이 사이트 내에서 얻어낼 수 있는 공개정보를 조회하는 서비스 입니다</div>
       {/* 전체를 감싸는 div -> form 태그로 변경하여 Enter 키로 submit */}
       <form
         onSubmit={handleSubmit}

@@ -1,7 +1,9 @@
-import React from "react";
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowLeft } from "lucide-react";
 import { motion } from "framer-motion";
 
+// 간단한 카드/카드콘텐츠/버튼 컴포넌트
 function Card({ className = "", children }) {
   return (
     <div className={`rounded-2xl shadow-md bg-white ${className}`}>
@@ -29,8 +31,10 @@ function Button({ onClick, children }) {
   );
 }
 
-// osint_results.json 파일에서 데이터 임포트
+// 메인 JSON 파일(도메인 whois/dns 등)
 import osintData from "./osint_results.json";
+// 이메일 검사 결과용 JSON 파일(셸록 결과)
+import emailOsintData from "./osint_email_result.json";
 
 // JSON 데이터를 트리 형태의 문자열로 변환하는 재귀 함수
 function jsonToTreeString(obj, depth = 0) {
@@ -63,25 +67,57 @@ function jsonToTreeString(obj, depth = 0) {
 }
 
 export default function TestResultPage() {
+  const navigate = useNavigate();
+
+  // 홈으로 돌아가기
   const handleGoHome = () => {
     window.location.href = "/";
   };
 
-  // txt 파일로 다운로드 (트리 형태)
+  // TXT 파일 다운로드 (트리 형태)
   const handleDownloadText = () => {
     // 트리 형태 문자열 변환
     const treeString = jsonToTreeString(osintData);
     const blob = new Blob([treeString], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
+    const _url = URL.createObjectURL(blob);
     const link = document.createElement("a");
-    link.href = url;
+    link.href = _url;
     link.download = "osint_results.txt";
     link.click();
-    URL.revokeObjectURL(url);
+    URL.revokeObjectURL(_url);
   };
 
-  // osint_results.json 내부 구조에서 필요한 항목을 구조 분해
+  // osint_results.json에서 가져오는 항목
   const { whois, dns, related_domains } = osintData;
+
+  // 이메일 검사 로직
+  const [url, setUrl] = useState(""); // 사용자가 입력하는 email
+  const [emailResult, setEmailResult] = useState(null); // 검사 결과 저장
+
+  // 이메일 검사
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!url.trim()) {
+      alert("이메일을 입력하세요");
+      return;
+    }
+
+    // 간단한 이메일 유효성 검사(정규식 예시)
+    const re = /^[\w\-.]+@[\w\-.]+\.[A-Za-z]{2,}$/;
+    const isValid = re.test(url);
+
+    // 검사 결과를 state에 저장 (실제로는 이메일 기반으로 API 호출 또는 다른 로직 수행 가능)
+    setEmailResult({
+      email: url,
+      isValid,
+      // 이메일 OSINT 데이터(샘플) 가져오기
+      // 여기서는 import 한 JSON을 단순히 포함하지만, 실제 환경에서는 요청에 따라 다른 결과를 가져올 수 있습니다.
+      sherlockResult: emailOsintData.result,
+    });
+  };
+
+  // url input 비어있으면 버튼 비활성화
+  const isDisabled = url.trim() === "";
 
   return (
     <motion.main
@@ -142,8 +178,70 @@ export default function TestResultPage() {
 
         {/* 다운로드 버튼 */}
         <Button onClick={handleDownloadText}>
-          TXT 파일로 전체 데이터 다운로드 (트리형)
+          데이터 다운로드(TXT)
         </Button>
+
+        {/* 추가검사 */}
+        <div className="text-2xl font-bold mt-12 mb-4 text-gray-800">이메일 추가 검사</div>
+        <form
+          onSubmit={handleSubmit}
+          className="flex items-center w-full max-w-3/8 rounded-4xl bg-white/70 shadow px-4 py-2"
+        >
+          <input
+            type="text"
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="example@gmail.com"
+            className="flex-1 bg-transparent border-none focus:outline-none text-gray-800 placeholder-gray-500"
+          />
+          <button
+            type="submit"
+            disabled={isDisabled}
+            className={`flex items-center justify-center w-10 h-10 rounded-full transition ${
+              isDisabled
+                ? 'bg-gray-300 text-gray-400 cursor-not-allowed'
+                : 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+            }`}
+          >
+            {/* 화살표 아이콘 (오른쪽 방향) */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth="2"
+              stroke="currentColor"
+              className="w-5 h-5"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M13.5 4.5l6 6m0 0l-6 6m6-6H4.5"
+              />
+            </svg>
+          </button>
+        </form>
+
+        {/* 이메일 검사결과 카드 */}
+        {emailResult && (
+          <Card className="w-full mt-6">
+            <CardContent>
+              <h2 className="font-bold text-lg mb-2">이메일 검사 결과</h2>
+              <p className="mb-2">입력 이메일: {emailResult.email}</p>
+              {emailResult.isValid ? (
+                <p className="text-green-600">유효한 이메일 형식입니다.</p>
+              ) : (
+                <p className="text-red-600">유효하지 않은 이메일 형식입니다.</p>
+              )}
+              {/* Sherlock 결과 출력 */}
+              <div className="mt-4">
+                <h3 className="font-bold">Sherlock OSINT Result</h3>
+                <pre className="whitespace-pre-wrap text-sm mt-2 bg-gray-50 p-2 rounded">
+                  {emailResult.sherlockResult}
+                </pre>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </motion.main>
   );
